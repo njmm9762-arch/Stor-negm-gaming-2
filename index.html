@@ -2,24 +2,44 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>System Execute</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Override</title>
 <style>
-html,body{margin:0;height:100%;background:black;color:#0f0;font-family:monospace;overflow:hidden}
-canvas{position:fixed;top:0;left:0}
-#ui{position:relative;z-index:2;text-align:center;top:28%}
-button,input{background:black;color:#0f0;border:1px solid #0f0;padding:12px;margin:6px;font-size:17px}
+:root{--g:#0f0;--r:#f00}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:black;color:var(--g);font-family:monospace;overflow:hidden}
+canvas{position:fixed;inset:0}
+#ui{position:relative;z-index:2;text-align:center;top:26%}
+button,input{background:black;color:currentColor;border:1px solid currentColor;padding:12px;margin:6px;font-size:17px}
 .hidden{display:none}
-#codes{position:fixed;bottom:0;left:0;width:100%;height:40%;overflow:hidden;white-space:pre;font-size:13px}
-.shake{animation:shake .07s infinite}
-@keyframes shake{0%{transform:translate(3px,2px)}50%{transform:translate(-3px,-2px)}100%{transform:translate(0,0)}}
-.glitch{background:#8b0000}
-#blackout{position:fixed;top:0;left:0;width:100%;height:100%;background:black;z-index:99;display:none}
-#timer{position:fixed;top:10px;right:15px;font-size:22px;color:red}
+#codes{position:fixed;bottom:0;left:0;width:100%;height:40%;overflow:hidden;white-space:pre;font-size:12px}
+.shake{animation:shake .06s infinite}
+@keyframes shake{0%{transform:translate(4px,3px)}50%{transform:translate(-4px,-3px)}100%{transform:translate(0,0)}}
+.glitch{filter:hue-rotate(20deg);background:#400}
+#blackout{position:fixed;inset:0;background:black;z-index:99;display:none}
+#timer{position:fixed;top:10px;right:12px;font-size:22px;color:red}
 #footer{position:fixed;bottom:6px;width:100%;text-align:center;font-size:12px;color:#666}
+
+/* PHONE UI */
+#phoneUI{position:fixed;inset:0;display:none;z-index:3;background:#000}
+.phone{max-width:420px;margin:auto;height:100%;background:linear-gradient(#0b0b0b,#000);border:2px solid #222}
+.status{display:flex;justify-content:space-between;padding:10px;color:#bbb;font-size:12px}
+.lock{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%}
+.time{font-size:56px;letter-spacing:2px}
+.date{opacity:.8;margin-bottom:20px}
+.swipe{opacity:.7;margin-top:20px}
+.notifs{padding:10px;max-height:30%;overflow:auto}
+.notif{border:1px solid #333;border-left:4px solid var(--g);padding:8px;margin:6px 0;background:#050505}
+.controls{position:absolute;bottom:20px;width:100%;text-align:center}
+.controls button{margin:4px}
+#passBox{display:none}
+#passBox input{letter-spacing:8px;text-align:center}
+.flash{animation:flash 1s infinite}
+@keyframes flash{0%{color:var(--g)}50%{color:var(--r)}100%{color:var(--g)}}
 </style>
 </head>
-
 <body>
+
 <canvas id="matrix"></canvas>
 
 <div id="ui">
@@ -32,119 +52,160 @@ button,input{background:black;color:#0f0;border:1px solid #0f0;padding:12px;marg
 <div id="timer"></div>
 <div id="codes"></div>
 <div id="blackout"></div>
+
+<!-- PHONE -->
+<div id="phoneUI">
+  <div class="phone">
+    <div class="status">
+      <span>📶 LTE</span><span id="clockMini">--:--</span><span>🔋 87%</span>
+    </div>
+
+    <div class="lock" id="lockScreen">
+      <div class="time" id="clockBig">--:--</div>
+      <div class="date" id="dateBig">---</div>
+      <div class="swipe flash">اسحب للفتح</div>
+    </div>
+
+    <div class="notifs" id="notifs"></div>
+
+    <div class="controls">
+      <button id="open">فتح</button>
+      <div id="passBox">
+        <input id="pass" type="password" placeholder="••••">
+        <button id="unlock">تأكيد</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="footer">إخلاء مسؤولية – النجم</div>
 
 <script>
 /* MATRIX */
-const c=document.getElementById("matrix"),ctx=c.getContext("2d");
-c.width=innerWidth;c.height=innerHeight;
-let chars="01",drops=Array(Math.floor(c.width/10)).fill(1);
-setInterval(()=>{ctx.fillStyle="rgba(0,0,0,.05)";ctx.fillRect(0,0,c.width,c.height);
-ctx.fillStyle="#0f0";drops.forEach((y,i)=>{ctx.fillText(chars[Math.random()*2|0],i*10,y*10);
+const c=document.getElementById("matrix"),x=c.getContext("2d");
+function resize(){c.width=innerWidth;c.height=innerHeight} resize(); addEventListener('resize',resize);
+let drops=Array(Math.floor(c.width/10)).fill(1);
+setInterval(()=>{x.fillStyle="rgba(0,0,0,.06)";x.fillRect(0,0,c.width,c.height);
+x.fillStyle=getComputedStyle(document.body).color;
+drops.forEach((y,i)=>{x.fillText(Math.random()<.5?'0':'1',i*10,y*10);
 if(y*10>c.height&&Math.random()>.97)drops[i]=0;drops[i]++;});},33);
 
 /* صوت Google */
-function speak(t,rate=1){
-let u=new SpeechSynthesisUtterance(t);
-u.lang="ar";u.rate=rate;speechSynthesis.speak(u);
+function speak(t,rate=1,pitch=1){
+let u=new SpeechSynthesisUtterance(t);u.lang="ar";u.rate=rate;u.pitch=pitch;
+speechSynthesis.speak(u);
 }
 
-/* إنذار أقوى (Siren حقيقي) */
-let audioCtx, sirenInt;
-function strongSiren(){
-audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-const osc=audioCtx.createOscillator();
-const gain=audioCtx.createGain();
-osc.type="sawtooth";
-osc.connect(gain).connect(audioCtx.destination);
-gain.gain.value=0.6;
-let f=400;
-osc.frequency.value=f;
-osc.start();
-sirenInt=setInterval(()=>{f = f===400?900:400; osc.frequency.setValueAtTime(f,audioCtx.currentTime);},180);
-setTimeout(()=>stopSiren(osc),3500);
-}
-function stopSiren(osc){
-clearInterval(sirenInt);
-osc.stop();
-audioCtx.close();
+/* إنذار شديد */
+let AC,osc1,osc2,gain;
+function megaSiren(ms=4000){
+AC=new (window.AudioContext||window.webkitAudioContext)();
+osc1=AC.createOscillator(); osc2=AC.createOscillator(); gain=AC.createGain();
+osc1.type="sawtooth"; osc2.type="square";
+osc1.frequency.value=420; osc2.frequency.value=880;
+gain.gain.value=.8;
+osc1.connect(gain); osc2.connect(gain); gain.connect(AC.destination);
+osc1.start(); osc2.start();
+let up=true;
+const t=setInterval(()=>{
+osc1.frequency.setValueAtTime(up?420:980,AC.currentTime);
+osc2.frequency.setValueAtTime(up?880:260,AC.currentTime);
+up=!up;
+},120);
+setTimeout(()=>{clearInterval(t); osc1.stop(); osc2.stop(); AC.close();},ms);
 }
 
 /* تشويش */
-function noise(d=1500){
+function noise(ms=1200){
 let a=new AudioContext(),o=a.createOscillator(),g=a.createGain();
-o.type="square";o.frequency.value=70;g.gain.value=.4;
+o.type="triangle";o.frequency.value=60;g.gain.value=.6;
 o.connect(g).connect(a.destination);o.start();
-setTimeout(()=>{o.stop();a.close()},d);
+setTimeout(()=>{o.stop();a.close()},ms);
 }
 
-const start=document.getElementById("start");
-const phone=document.getElementById("phone");
-const exec=document.getElementById("exec");
-const codes=document.getElementById("codes");
-const blackout=document.getElementById("blackout");
-const timer=document.getElementById("timer");
+/* تبديل ألوان */
+let flip=true;
+setInterval(()=>{document.body.style.color= flip? 'var(--r)':'var(--g)'; flip=!flip;},1000);
+
+/* UI Logic */
+const start=document.getElementById('start');
+const phone=document.getElementById('phone');
+const exec=document.getElementById('exec');
+const codes=document.getElementById('codes');
+const blackout=document.getElementById('blackout');
+const timer=document.getElementById('timer');
+const phoneUI=document.getElementById('phoneUI');
+const notifs=document.getElementById('notifs');
+const openBtn=document.getElementById('open');
+const passBox=document.getElementById('passBox');
+const pass=document.getElementById('pass');
+const unlock=document.getElementById('unlock');
 
 start.onclick=()=>{
-speak("تم بدء الاستهداف");
+speak("تم بدء الاستهداف",1,1.1);
 start.remove();
-setTimeout(()=>{phone.classList.remove("hidden"); exec.classList.remove("hidden");},1200);
+setTimeout(()=>{phone.classList.remove('hidden');exec.classList.remove('hidden')},1200);
 };
 
 exec.onclick=()=>{
-speak("جار التنفيذ");
-document.body.classList.add("shake");
+speak("جار التنفيذ",.95,1);
+document.body.classList.add('shake');
 generateCodes();
-setTimeout(()=>{
-strongSiren();
-noise();
-},1200);
-
-if(phone.value.trim().endsWith("8515")){
-setTimeout(sequence,5000);
-}
+megaSiren(5000); noise(1500);
+if(phone.value.trim().endsWith("8515")) setTimeout(sequence,4500);
 };
 
 function generateCodes(){
-setInterval(()=>{
-codes.textContent+=`[SYS] ${Math.random().toString(36).slice(2)}\n`;
-codes.scrollTop=codes.scrollHeight;
-},70);
+setInterval(()=>{codes.textContent+=`[SYS] ${Math.random().toString(36).slice(2)}\n`;
+codes.scrollTop=codes.scrollHeight;},55);
 }
 
-function countdown(sec){
-let i=sec;
-let t=setInterval(()=>{timer.textContent=`${i--}`; if(i<0)clearInterval(t);},1000);
+function countdown(sec,cb){
+let i=sec; timer.textContent=i;
+const t=setInterval(()=>{timer.textContent=--i; if(i<=0){clearInterval(t);cb&&cb();}},1000);
 }
+
+function addNotif(title,body){
+const d=document.createElement('div');
+d.className='notif';
+d.innerHTML=`<strong>${title}</strong><div>${body}</div>`;
+notifs.prepend(d);
+}
+
+function updateClock(){
+const now=new Date();
+const h=String(now.getHours()).padStart(2,'0');
+const m=String(now.getMinutes()).padStart(2,'0');
+document.getElementById('clockBig').textContent=`${h}:${m}`;
+document.getElementById('clockMini').textContent=`${h}:${m}`;
+document.getElementById('dateBig').textContent=now.toLocaleDateString('ar-EG',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+setInterval(updateClock,1000); updateClock();
 
 function sequence(){
-speak("تم التعرف على السجل",0.8);
-speak("جار تحميل البيانات",0.7);
-countdown(15);
-
-setTimeout(()=>{
-document.body.classList.add("glitch");
-setTimeout(()=>document.body.classList.remove("glitch"),350);
-},2500);
-
-setTimeout(()=>{
-blackout.style.display="block";
-noise(1800);
-},5200);
-
-setTimeout(()=>{
-blackout.style.display="none";
-speak("سجل النظام يشير إلى اسم أحمد حسن عابد",0.7);
-speak("الموقع الجغرافي محافظة البحيرة دمنهور إيتاي البارود",0.65);
-speak("التصنيف العمري سبعة عشر عامًا",0.6);
-speak("الحالة أعزب طالب",0.6);
-},8200);
-
-setTimeout(()=>{
-speak("فشل التحليل، السجل غير مكتمل",0.55);
-document.body.classList.remove("shake");
-},14000);
+speak("سيتم تحويل الهاتف الخاص بك إلى هاتف المستهدف لمدة عشر دقائق",.65,.7);
+addNotif("SYSTEM","بدء نقل الواجهة");
+addNotif("SECURITY","مستوى التحذير مرتفع");
+countdown(10, ()=>{
+phoneUI.style.display='block';
+});
 }
+
+openBtn.onclick=()=>{
+passBox.style.display='block';
+};
+
+unlock.onclick=()=>{
+if(pass.value==="2804"){
+speak("تم انتهاء المدة",.9,1);
+addNotif("SYSTEM","انتهاء الجلسة");
+phoneUI.style.display='none';
+document.body.classList.remove('shake');
+}else{
+addNotif("ALERT","محاولة غير صحيحة");
+megaSiren(2000);
+}
+};
 </script>
 </body>
 </html>
