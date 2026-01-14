@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>System Execute</title>
+<style>
+html,body{margin:0;height:100%;background:black;color:#0f0;font-family:monospace;overflow:hidden}
+canvas{position:fixed;top:0;left:0}
+#ui{position:relative;z-index:2;text-align:center;top:28%}
+button,input{background:black;color:#0f0;border:1px solid #0f0;padding:12px;margin:6px;font-size:17px}
+.hidden{display:none}
+#codes{position:fixed;bottom:0;left:0;width:100%;height:40%;overflow:hidden;white-space:pre;font-size:13px}
+.shake{animation:shake .07s infinite}
+@keyframes shake{0%{transform:translate(3px,2px)}50%{transform:translate(-3px,-2px)}100%{transform:translate(0,0)}}
+.glitch{background:#8b0000}
+#blackout{position:fixed;top:0;left:0;width:100%;height:100%;background:black;z-index:99;display:none}
+#timer{position:fixed;top:10px;right:15px;font-size:22px;color:red}
+#footer{position:fixed;bottom:6px;width:100%;text-align:center;font-size:12px;color:#666}
+</style>
+</head>
+
+<body>
+<canvas id="matrix"></canvas>
+
+<div id="ui">
+<button id="start">اضغط للاستهداف</button><br>
+<input id="phone" class="hidden" placeholder="أدخل رقم الهاتف">
+<br>
+<button id="exec" class="hidden">تنفيذ</button>
+</div>
+
+<div id="timer"></div>
+<div id="codes"></div>
+<div id="blackout"></div>
+<div id="footer">إخلاء مسؤولية – النجم</div>
+
+<script>
+/* MATRIX */
+const c=document.getElementById("matrix"),ctx=c.getContext("2d");
+c.width=innerWidth;c.height=innerHeight;
+let chars="01",drops=Array(Math.floor(c.width/10)).fill(1);
+setInterval(()=>{ctx.fillStyle="rgba(0,0,0,.05)";ctx.fillRect(0,0,c.width,c.height);
+ctx.fillStyle="#0f0";drops.forEach((y,i)=>{ctx.fillText(chars[Math.random()*2|0],i*10,y*10);
+if(y*10>c.height&&Math.random()>.97)drops[i]=0;drops[i]++;});},33);
+
+/* صوت Google */
+function speak(t,rate=1){
+let u=new SpeechSynthesisUtterance(t);
+u.lang="ar";u.rate=rate;speechSynthesis.speak(u);
+}
+
+/* إنذار أقوى (Siren حقيقي) */
+let audioCtx, sirenInt;
+function strongSiren(){
+audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+const osc=audioCtx.createOscillator();
+const gain=audioCtx.createGain();
+osc.type="sawtooth";
+osc.connect(gain).connect(audioCtx.destination);
+gain.gain.value=0.6;
+let f=400;
+osc.frequency.value=f;
+osc.start();
+sirenInt=setInterval(()=>{f = f===400?900:400; osc.frequency.setValueAtTime(f,audioCtx.currentTime);},180);
+setTimeout(()=>stopSiren(osc),3500);
+}
+function stopSiren(osc){
+clearInterval(sirenInt);
+osc.stop();
+audioCtx.close();
+}
+
+/* تشويش */
+function noise(d=1500){
+let a=new AudioContext(),o=a.createOscillator(),g=a.createGain();
+o.type="square";o.frequency.value=70;g.gain.value=.4;
+o.connect(g).connect(a.destination);o.start();
+setTimeout(()=>{o.stop();a.close()},d);
+}
+
+const start=document.getElementById("start");
+const phone=document.getElementById("phone");
+const exec=document.getElementById("exec");
+const codes=document.getElementById("codes");
+const blackout=document.getElementById("blackout");
+const timer=document.getElementById("timer");
+
+start.onclick=()=>{
+speak("تم بدء الاستهداف");
+start.remove();
+setTimeout(()=>{phone.classList.remove("hidden"); exec.classList.remove("hidden");},1200);
+};
+
+exec.onclick=()=>{
+speak("جار التنفيذ");
+document.body.classList.add("shake");
+generateCodes();
+setTimeout(()=>{
+strongSiren();
+noise();
+},1200);
+
+if(phone.value.trim().endsWith("8515")){
+setTimeout(sequence,5000);
+}
+};
+
+function generateCodes(){
+setInterval(()=>{
+codes.textContent+=`[SYS] ${Math.random().toString(36).slice(2)}\n`;
+codes.scrollTop=codes.scrollHeight;
+},70);
+}
+
+function countdown(sec){
+let i=sec;
+let t=setInterval(()=>{timer.textContent=`${i--}`; if(i<0)clearInterval(t);},1000);
+}
+
+function sequence(){
+speak("تم التعرف على السجل",0.8);
+speak("جار تحميل البيانات",0.7);
+countdown(15);
+
+setTimeout(()=>{
+document.body.classList.add("glitch");
+setTimeout(()=>document.body.classList.remove("glitch"),350);
+},2500);
+
+setTimeout(()=>{
+blackout.style.display="block";
+noise(1800);
+},5200);
+
+setTimeout(()=>{
+blackout.style.display="none";
+speak("سجل النظام يشير إلى اسم أحمد حسن عابد",0.7);
+speak("الموقع الجغرافي محافظة البحيرة دمنهور إيتاي البارود",0.65);
+speak("التصنيف العمري سبعة عشر عامًا",0.6);
+speak("الحالة أعزب طالب",0.6);
+},8200);
+
+setTimeout(()=>{
+speak("فشل التحليل، السجل غير مكتمل",0.55);
+document.body.classList.remove("shake");
+},14000);
+}
+</script>
+</body>
+</html>
